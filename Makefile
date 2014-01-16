@@ -4,7 +4,7 @@ LINUX ?= /lib/modules/$(shell uname -r)/build
 
 mcuio-y := core.o bus.o
 
-obj-m = mcuio.o
+obj-m = mcuio.o mcuio-hc-drv.o
 
 GIT_VERSION = $(shell cd $(src); git describe --dirty --long --tags)
 
