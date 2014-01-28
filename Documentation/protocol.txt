@@ -1,0 +1,161 @@
+*** SYSTEM OVERVIEW ***
+
+A typical use case for the mcuio protocol is shown in the following diagram:
+
+
++---------------+      	    +------------+
+|		|   PHY     |		 |
+|      MPU     	|<--------->|    MCU	 |
+|      		|	    |	 	 |
++---------------+	    +------------+
+
+where:
+
+* MPU (MicroProcessor Unit) indicates a microprocessor based system, with
+(relatively) large memory and a full fledged operating system (Linux is the
+only supported OS at present).
+
+* MCU (MicroController Unit) indicates a microcontroller based system, with
+some 10s-100s KBytes RAM and a very simple os. Typical modern microcontrollers
+are equipped with many peripherals, such as GPIOs, A/Ds, D/As, PWM channels,
+Input capture/Output compare channels and so on.
+
+* PHY is any popular physical communication link, such as rs232, i2c, spi, ...
+
+The goal of the mcuio overall system is getting the MPU to easily control the
+MCU's peripherals. On the MCU side, a single device will be instantiated for
+each MCU's function.
+
+
+*** PROTOCOL OVERVIEW ***
+
+The protocol is as simple as possible: it just allows to read or write memory
+locations (bytes, words, dwords and quands). Frames have fixed size (16 bytes)
+with the following format:
+
+       4                    8  	     	   2         2
+     32 bits            64 bits		 16 bits    16 bits
++------------------+-------------------+---------+---------+
+| type & address   |      data         | spare   |  CRC 16 |
++------------------+-------------------+---------+---------+
+
+where the "type & address field has the following structure:
+
+    8      3     4          5        12
++--------+---+--------+----------+---------+
+|  type  |bus|  dev   | function | offset  |
++--------+---+--------+----------+---------+
+MSB					  LSB
+
+Type can be:
+
+        00000000 -> read byte
+	00000001 -> write byte
+	00000010 -> read word
+	00000011 -> write word
+	00000100 -> read dword
+	00000101 -> write dword
+	00000110 -> read quad
+	00000111 -> write quad
+	01000000 -> read byte reply (OK)
+	....
+	01000111 -> write quad reply (OK)
+	01100000 -> read byte reply (ERROR)
+	....
+	01100111 -> write quad reply (ERROR)
+	1XXXXXXX -> reserved
+
+An address is made of the following fields:
+
+   * bus (0 .. 7): select one of the PHY links which might be connected to
+   the MPU (max 8 links)
+   * dev (0 .. 15): in case the phy link is actually a bus, this field selects
+   the node we want to talk to.
+   * function (0 .. 31): this field selects one of the peripheral modules on
+   the MPU (each peripheral is called a "function", with a pci-like term).
+   * offset (0 .. 4095): each MPU peripheral is assigned a "virtual" memory
+   space. This field contains the offset at which the specified read or
+   write operation will be done.
+
+Each request frame shall have a reply. In case of errors (bit 5 of type = 1),
+the first data dword contains an error code.
+
+Protocol endianness is LITTLE. This choice has been made to make life easier
+on MCUs, which are often little endian ARM machines.
+
+An mcuio device is not required to implement any request queue: each request
+to a device must be followed by a reply, no other request is allowed before a
+reply is sent by the target function or a timer expires. Actual reply tiemouts
+are PHY specific.
+
+*** FUNCTIONS MEMORY MAPS ***
+
+As stated in the previous paragraph, every function has a 12 bits memory space,
+the leading 8 bytes of which always contain a descriptor with the following
+[mandatory] format:
+
+   	  16 bits         16 bits
+   +-----------------+-------------+ 0
+   |    vendor       |   device id |
+   +-----------------+------+------+ 4
+   |	 class code  (24)   | rev  |
+   +------------------------+------+ 8
+   |				   |
+   |				   |
+   |				   |
+   +-------------------------------+ 0x0fff
+MSB				   LSB
+
+[ yes, this also resembles a pci header ].
+The following class codes have been defined at present:
+
+------------------+--------------
+	 CLASS	  |   CODE
+------------------+--------------
+ HOST CONTROLLER  |	1
+------------------+--------------
+       GPIO       |	2
+------------------+--------------
+        ADC	  |	3
+------------------+--------------
+        DAC       |	4
+------------------+--------------
+        PWM	  |	5
+------------------+--------------
+
+A standard memory map shall be defined for each of the classes (see the
+maps directory). Software aboard the mcu should preferably comply to the
+standard map, but if that is not possible, exceptions shall be handled via
+the vendor/device id mechanism.
+
+HOST CONTROLLER devices are special: they are mcuio devices, but actually
+live on the MPU. An host controller is always device 0, function 0 on its
+bus and it is responsible of enumerating connected devices.
+
+
+*** SPONTANEOUS MESSAGES FROM THE MCU ***
+
+In principle the protocol has a peer-to-peer structure. This allows the MCU
+to notify the MPU about meaningful events (such as GPIOs status changes, for
+instance).
+Some physical layers, though, do not allow the MCU to send spontaneous
+requests. In such cases an MPU gpio shall be used to interface the two machines:
+
+
++---------------+      	    +------------+
+|		|   PHY     |		 |
+|      MPU     	|<--------->|    MCU	 |
+|      		|	    |	 	 |
++---------------+   +---    +------------+
+          ^	    | Event         |
+	  |	----+		    |
+	  +-------------------------+
+
+
+T.B.D.: define details.
+
+On the other hand, when the physical layer allows the MCU to send spintaneous
+messages, events are represented as writes to predefined locations within
+some function of device 0 (the MPU), much like MSI interrupts.
+
+T.B.D.: define details
