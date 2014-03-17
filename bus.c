@@ -26,6 +26,12 @@ static struct bus_attribute def_bus_attrs[] = {
 	__ATTR_NULL,
 };
 
+static void mcuio_dev_default_release(struct device *dev)
+{
+	struct mcuio_device *mdev = to_mcuio_dev(dev);
+	kfree(mdev);
+}
+
 /*
  * mcuio_match_device
  * @drv driver to match
@@ -103,8 +109,15 @@ struct device mcuio_bus = {
 };
 EXPORT_SYMBOL_GPL(mcuio_bus);
 
+static const struct attribute_group *default_dev_attr_groups[] = {
+	&mcuio_default_dev_attr_group,
+	NULL,
+};
+
 struct device_type mcuio_default_device_type = {
 	.name = "mcuiodev",
+	.groups = default_dev_attr_groups,
+	.release = mcuio_dev_default_release,
 };
 
 int mcuio_device_register(struct mcuio_device *mdev,

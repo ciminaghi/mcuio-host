@@ -26,6 +26,24 @@ static struct mcuio_device_id default_hc_id = {
 	.class = MCUIO_CLASS_HOST_CONTROLLER,
 };
 
+static void mcuio_hc_dev_release(struct device *dev)
+{
+	struct mcuio_device *mdev = to_mcuio_dev(dev);
+	mcuio_put_bus(mdev->bus);
+	kfree(mdev);
+}
+
+static const struct attribute_group *hc_dev_attr_groups[] = {
+	&mcuio_default_dev_attr_group,
+	NULL,
+};
+
+static struct device_type hc_device_type = {
+	.name = "mcuio-host-controller",
+	.release = mcuio_hc_dev_release,
+	.groups = hc_dev_attr_groups,
+};
+
 struct device *mcuio_add_hc_device(struct mcuio_device_id *id,
 				   struct mcuio_hc_platform_data *plat)
 {
@@ -43,7 +61,7 @@ struct device *mcuio_add_hc_device(struct mcuio_device_id *id,
 	d->fn = 0;
 	d->id = id ? *id : default_hc_id;
 	d->dev.platform_data = plat;
-	ret = mcuio_device_register(d, NULL, NULL);
+	ret = mcuio_device_register(d, &hc_device_type, NULL);
 	if (ret < 0)
 		goto err1;
 	return &d->dev;
