@@ -5,7 +5,7 @@ LINUX ?= /lib/modules/$(shell uname -r)/build
 mcuio-y := core.o bus.o
 regmap-mcuio-y := regmap-mcuio-remote.o
 
-obj-m = mcuio.o mcuio-hc-drv.o regmap-mcuio.o mcuio-hc-dev.o
+obj-m = mcuio.o mcuio-hc-drv.o regmap-mcuio.o mcuio-hc-dev.o mcuio-soft-hc.o
 
 
 GIT_VERSION = $(shell cd $(src); git describe --dirty --long --tags)
