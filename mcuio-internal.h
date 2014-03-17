@@ -2,6 +2,7 @@
 #define __MCUIO_INTERNAL_H__
 
 #include <linux/version.h>
+#include <linux/regmap.h>
 
 extern struct bus_type mcuio_bus_type;
 extern struct device mcuio_bus;
@@ -54,5 +55,9 @@ void mcuio_put_bus(unsigned bus);
  * @r: pointer to request
  */
 int mcuio_submit_request(struct mcuio_request *r);
+
+struct regmap *regmap_init_mcuio(struct device *dev,
+				 struct mcuio_device *hc,
+				 const struct regmap_config *config);
 
 #endif /* __MCUIO_INTERNAL_H__ */

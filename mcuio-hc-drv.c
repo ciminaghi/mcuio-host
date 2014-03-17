@@ -401,8 +401,7 @@ static int __do_one_enum(struct mcuio_device *mdev, unsigned edev,
 	if (!r)
 		return -ENOMEM;
 	ret = mcuio_submit_request(r);
-	if (!ret)
-		*out = r;
+	*out = r;
 	return ret;
 }
 
