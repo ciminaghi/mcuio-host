@@ -63,7 +63,16 @@ Type can be:
 	01100000 -> read byte reply (ERROR)
 	....
 	01100111 -> write quad reply (ERROR)
-	1XXXXXXX -> reserved
+	1XXXXXXX -> fill data bit (see below)
+
+When bit 7 of type is 0, only one object is read/written
+(byte, word, dword, quad).
+When bit 7 of type is set (fill_data bit), data[] is filled with as many
+objects as possible (8 bytes, 4 words, 2 dwords, 1 quad). This is to save
+bandwith and avoid problems in case of different endianness between MPU and
+MCU (we could of course for example read/write a quad, but then bytes should
+be swapped in a different way depending on the actual type of the read/written
+objects, and this would make life more complicated).
 
 An address is made of the following fields:
 
