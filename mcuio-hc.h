@@ -28,4 +28,13 @@ struct mcuio_hc_platform_data {
 	void *data;
 };
 
+/*
+ * mcuio_add_hc_device() : add host controller device
+ *
+ * @id: pointer to mcuio device's id
+ * @plat: pointer to platform data structure
+ */
+struct device *mcuio_add_hc_device(struct mcuio_device_id *id,
+				   struct mcuio_hc_platform_data *plat);
+
 #endif /* __HOST_CONTROLLER_H__ */
