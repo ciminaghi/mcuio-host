@@ -19,6 +19,7 @@
 
 #include "mcuio-hc.h"
 #include "mcuio-internal.h"
+#include "mcuio-soft-hc.h"
 
 static struct mcuio_device_id default_hc_id = {
 	.device = 0,
@@ -26,12 +27,13 @@ static struct mcuio_device_id default_hc_id = {
 	.class = MCUIO_CLASS_HOST_CONTROLLER,
 };
 
-static void mcuio_hc_dev_release(struct device *dev)
+void mcuio_hc_dev_default_release(struct device *dev)
 {
 	struct mcuio_device *mdev = to_mcuio_dev(dev);
 	mcuio_put_bus(mdev->bus);
 	kfree(mdev);
 }
+EXPORT_SYMBOL(mcuio_hc_dev_default_release);
 
 static const struct attribute_group *hc_dev_attr_groups[] = {
 	&mcuio_default_dev_attr_group,
@@ -40,12 +42,12 @@ static const struct attribute_group *hc_dev_attr_groups[] = {
 
 static struct device_type hc_device_type = {
 	.name = "mcuio-host-controller",
-	.release = mcuio_hc_dev_release,
 	.groups = hc_dev_attr_groups,
 };
 
 struct device *mcuio_add_hc_device(struct mcuio_device_id *id,
-				   struct mcuio_hc_platform_data *plat)
+				   struct mcuio_hc_platform_data *plat,
+				   void (*release)(struct device *))
 {
 	int b, ret = -ENOMEM;
 	struct mcuio_device *d = kzalloc(sizeof(*d), GFP_KERNEL);
@@ -61,6 +63,8 @@ struct device *mcuio_add_hc_device(struct mcuio_device_id *id,
 	d->fn = 0;
 	d->id = id ? *id : default_hc_id;
 	d->dev.platform_data = plat;
+	hc_device_type.release = release ? release :
+	    mcuio_hc_dev_default_release;
 	ret = mcuio_device_register(d, &hc_device_type, NULL);
 	if (ret < 0)
 		goto err1;
@@ -73,6 +77,12 @@ err0:
 	return ERR_PTR(ret);
 }
 EXPORT_SYMBOL(mcuio_add_hc_device);
+
+void mcuio_del_hc_device(struct device *dev)
+{
+	mcuio_device_unregister(to_mcuio_dev(dev));
+}
+EXPORT_SYMBOL(mcuio_del_hc_device);
 
 MODULE_VERSION(GIT_VERSION); /* Defined in local Makefile */
 MODULE_AUTHOR("Davide Ciminaghi, some code from ZIO by Vaga, Rubini");
