@@ -44,6 +44,11 @@ struct mcuio_hc_data {
 
 	struct task_struct *rx_thread;
 	wait_queue_head_t rd_wq;
+
+	struct mcuio_device *mdev;
+	struct kthread_worker enum_kworker;
+	struct task_struct *enum_kworker_task;
+	struct kthread_work do_enum;
 };
 
 typedef int (*mcuio_copy)(uint32_t *, const uint32_t *, int, int);
@@ -385,6 +390,87 @@ int mcuio_submit_request(struct mcuio_request *r)
 }
 EXPORT_SYMBOL(mcuio_submit_request);
 
+static int __do_one_enum(struct mcuio_device *mdev, unsigned edev,
+			 unsigned efunc, struct mcuio_request **out)
+{
+	struct mcuio_request *r;
+	int ret;
+
+	r = __make_request(mdev, edev, efunc,
+			   mcuio_type_rddw, 1, 0, NULL);
+	if (!r)
+		return -ENOMEM;
+	ret = mcuio_submit_request(r);
+	if (!ret)
+		*out = r;
+	return ret;
+}
+
+static void __register_device(struct mcuio_request *r)
+{
+	struct mcuio_func_descriptor d;
+	struct mcuio_device *hc = r->hc;
+	struct mcuio_device *new;
+	new = kzalloc(sizeof(*new), GFP_KERNEL);
+	if (!new) {
+		dev_err(&r->hc->dev,
+			"error allocating device %u:%u.%u\n",
+			hc->bus, r->dev, r->func);
+		return;
+	}
+	memcpy(&d, r->data, sizeof(d));
+	new->id.device = mcuio_get_device(&d);
+	new->id.vendor = mcuio_get_vendor(&d);
+	new->id.class = d.rev_class;
+	new->id.class_mask = 0xffffffff;
+	new->bus = hc->bus;
+	new->device = r->dev;
+	new->fn = r->func;
+	pr_debug("%s %d, device = 0x%04x, vendor = 0x%04x, "
+		 "class = 0x%04x\n", __func__, __LINE__, new->id.device,
+		 new->id.vendor, new->id.class);
+	if (mcuio_device_register(new, NULL, &hc->dev) < 0) {
+		dev_err(&r->hc->dev,
+			"error registering device %u:%u.%u\n",
+			hc->bus, r->dev, r->func);
+		kfree(new);
+	}
+}
+
+static int __next_enum(unsigned *edev, unsigned *efunc)
+{
+	if ((*efunc)++ >= mcuio_funcs_per_dev() - 1) {
+		*efunc = 0;
+		if ((*edev)++ >= mcuio_devs_per_bus() - 1)
+			return 1;
+	}
+	return 0;
+}
+
+static void __do_enum(struct kthread_work *work)
+{
+	struct mcuio_hc_data *data =
+		container_of(work, struct mcuio_hc_data, do_enum);
+	struct mcuio_device *mdev = data->mdev;
+	struct mcuio_request *r;
+	unsigned edev, efunc;
+	int stop_enum, stat;
+
+	for (edev = 1, efunc = 0, stop_enum = 0; !stop_enum;
+	     stop_enum = __next_enum(&edev, &efunc)) {
+		stat = __do_one_enum(mdev, edev, efunc, &r);
+		if (stat < 0) {
+			dev_err(&mdev->dev,
+				"error %d on enum of %u.%u\n",
+				r->status == -ETIMEDOUT ? r->status :
+				r->data[0], edev, efunc);
+			continue;
+		}
+		/* Found a new device, let's add it */
+		__register_device(r);
+	}
+}
+
 static int mcuio_host_controller_probe(struct mcuio_device *mdev)
 {
 	struct mcuio_hc_data *data;
@@ -411,6 +497,7 @@ static int mcuio_host_controller_probe(struct mcuio_device *mdev)
 	dev_set_drvdata(&mdev->dev, data);
 	atomic_set(&data->removing, 0);
 	mutex_init(&data->lock);
+	data->mdev = mdev;
 	init_kthread_worker(&data->tx_kworker);
 	init_waitqueue_head(&data->rd_wq);
 	ret = regmap_read(map, MCUIO_IRQ, &irq);
@@ -444,7 +531,18 @@ static int mcuio_host_controller_probe(struct mcuio_device *mdev)
 		kthread_stop(data->tx_kworker_task);
 		return PTR_ERR(data->rx_thread);
 	}
-	dev_set_drvdata(&mdev->dev, data);
+	init_kthread_worker(&data->enum_kworker);
+	data->enum_kworker_task = kthread_run(kthread_worker_fn,
+					      &data->enum_kworker,
+					      "%s_%s",
+					      dev_name(&mdev->dev), "enum");
+	if (IS_ERR(data->enum_kworker_task)) {
+		dev_err(&mdev->dev, "failed to create enum task\n");
+		return -ENOMEM;
+	}
+	init_kthread_work(&data->do_enum, __do_enum);
+	/* Immediately start enum */
+	queue_kthread_work(&data->enum_kworker, &data->do_enum);
 	return 0;
 }
 
