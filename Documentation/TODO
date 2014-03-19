@@ -1,0 +1,13 @@
+Make it work on SMP machines (never tested, likely not working).
+
+Review the protocol, put some sync bytes at the beginning of the packet.
+
+Review the code again (fix header files, coding style, ...).
+
+Add code for receiving events from the MCU.
+
+Better sysfs (add some attributes ?), make it possible to start enumeration
+by user command (via sysfs) and to customize the number of devices/functions
+
+Add drivers for A/Ds and PWMs.
+
