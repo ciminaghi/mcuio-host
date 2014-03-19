@@ -1,0 +1,15 @@
+
+This is the first draft of the mcuio protocol implementation (Linux side).
+To build for the yun board:
+
+make ARCH=mips CROSS_COMPILE=<your-favourite-cross-compile> \
+LINUX=<path-to-yun-mips-linux-kernel>
+
+where <your-favourite-cross-compile> is the path to your cross-compiler, without
+the final gcc (i.e.: if the cross-compiler is /foo/bar/mips-openwrt-linux-gcc,
+CROSS_COMPILE shall be equal too /foo/bar/mips-openwrt-linux- , notice the final
+'-').
+<path-to-yun-mips-linux-kernel> is the path where the linux kernel sources for
+the yun board have been installed (in my case linino.git/trunk/build_dir/target-mips_r2_uClibc-0.9.33.2/linux-ar71xx_generic/linux-3.8.3)
+
+See Documentation/ for more details.
