@@ -16,6 +16,10 @@
 #define MCUIO_CLASS_TEXT_DISPLAY    0x0007
 #define MCUIO_CLASS_I2C_CONTROLLER  0x0008
 #define MCUIO_CLASS_SPI_CONTROLLER  0x0009
+/* Send irqs from MCU via communication protocol */
+#define MCUIO_CLASS_IRQ_CONTROLLER_PROTO  0x000a
+/* Send irqs from MCU via gpio */
+#define MCUIO_CLASS_IRQ_CONTROLLER_WIRE   0x000b
 
 /* Invalid device id (used for id table termination */
 #define MCUIO_NO_DEVICE		    0x0000
