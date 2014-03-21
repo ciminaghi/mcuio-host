@@ -57,6 +57,11 @@ void mcuio_put_bus(unsigned bus);
  */
 int mcuio_submit_request(struct mcuio_request *r);
 
+/*
+ * Set irq numbers for a given bus device (MCUIO_FUNCS_PER_DEV functions)
+ */
+int mcuio_hc_set_irqs(struct mcuio_device *hc, unsigned dev, int irqs[]);
+
 struct regmap *regmap_init_mcuio(struct device *dev,
 				 struct mcuio_device *hc,
 				 const struct regmap_config *config);
