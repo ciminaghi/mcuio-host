@@ -25,11 +25,13 @@ struct mcuio_device_id {
  * @device: device number (0 for host controllers)
  * @fn: function number (0 for host controllers)
  * @dev: the relevant device
+ * @irq: irq number for device
  */
 struct mcuio_device {
 	struct mcuio_device_id id;
 	unsigned bus, device, fn;
 	struct device dev;
+	int irq;
 };
 
 #define to_mcuio_dev(_dev) container_of(_dev, struct mcuio_device, dev)
