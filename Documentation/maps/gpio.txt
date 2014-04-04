@@ -27,7 +27,8 @@
 | mask for available gpio    |	   8 bits per gpio:
 | event modes		     |	   00000001 -> rising edge
 | 			     |	   00000010 -> falling edge
-|			     |     [ bits 2 - 7 are spare ]
+|			     |	   10000000 -> enable (bit 7 = 0 disables)
+|			     |     [ bits 2 - 6 are spare ]
 |			     |
 +----------------------------+ 0x510
 | actual gpio modes	     |     (0 means disabled, maybe available to some
@@ -47,7 +48,7 @@
 +----------------------------+ 0x928
 | gpio events status	     |	   1bit per gpio (1 -> event has been
 |			     |	   triggered).
-+----------------------------+ 0x920
++----------------------------+ 0x930
 
 (*) gpio labels are strings of max 4 chars. If shorter than 4 bytes, strings
 are 0 terminated.
