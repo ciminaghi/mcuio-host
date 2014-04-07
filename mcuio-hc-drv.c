@@ -333,12 +333,14 @@ static int __receive_messages(void *__data)
 			continue;
 		}
 		p = (struct mcuio_packet *)buf;
-		if (!mcuio_packet_is_reply(p))
-			/*
-			  Packet is a request, we do not handle requests at
-			  the moment
-			*/
-			continue;
+		if (!mcuio_packet_is_reply(p)) {
+			if (mcuio_packet_is_read(p))
+				/*
+				  Packet is a read request, we do not handle
+				  read requests at the moment
+				*/
+				continue;
+		}
 		r = __find_request(hc, p);
 		if (!r) {
 			dev_err(&hc->dev, "unexpected reply");
@@ -364,15 +366,18 @@ static void __send_messages(struct kthread_work *work)
 
 static void __enqueue_request(struct mcuio_device *mdev,
 			      struct mcuio_hc_data *data,
-			      struct mcuio_request *r)
+			      struct mcuio_request *r,
+			      int outgoing)
 {
 	mutex_lock(&data->lock);
-	list_add_tail(&r->list, &data->request_queue);
+	list_add_tail(&r->list, outgoing ? &data->request_queue :
+		      &data->pending_requests);
 	mutex_unlock(&data->lock);
-	queue_kthread_work(&data->tx_kworker, &data->send_messages);
+	if (outgoing)
+		queue_kthread_work(&data->tx_kworker, &data->send_messages);
 }
 
-static int mcuio_hc_enqueue_request(struct mcuio_request *r)
+static int mcuio_hc_enqueue_request(struct mcuio_request *r, int outgoing)
 {
 	struct mcuio_hc_data *data;
 	if (!r || !r->hc)
@@ -382,7 +387,7 @@ static int mcuio_hc_enqueue_request(struct mcuio_request *r)
 		return -EINVAL;
 	if (atomic_read(&data->removing))
 		return -ENODEV;
-	__enqueue_request(r->hc, data, r);
+	__enqueue_request(r->hc, data, r, outgoing);
 	return 0;
 }
 
@@ -399,7 +404,7 @@ int mcuio_submit_request(struct mcuio_request *r)
 	r->cb = __request_cb;
 	r->cb_data = &request_complete;
 	r->status = -ETIMEDOUT;
-	ret = mcuio_hc_enqueue_request(r);
+	ret = mcuio_hc_enqueue_request(r, 1);
 	if (!ret)
 		ret = wait_for_completion_interruptible(&request_complete);
 	if (ret)
@@ -407,6 +412,12 @@ int mcuio_submit_request(struct mcuio_request *r)
 	return r->status;
 }
 EXPORT_SYMBOL(mcuio_submit_request);
+
+int mcuio_setup_cb(struct mcuio_request *r)
+{
+	return mcuio_hc_enqueue_request(r, 0);
+}
+EXPORT_SYMBOL(mcuio_setup_cb);
 
 int mcuio_hc_set_irqs(struct mcuio_device *hc, unsigned dev, int __irqs[])
 {

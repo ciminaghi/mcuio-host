@@ -58,6 +58,14 @@ void mcuio_put_bus(unsigned bus);
 int mcuio_submit_request(struct mcuio_request *r);
 
 /*
+ * Setup a callback for an incoming request
+ *
+ * @r: pointer to corresponding request
+ */
+int mcuio_setup_cb(struct mcuio_request *r);
+
+
+/*
  * Set irq numbers for a given bus device (MCUIO_FUNCS_PER_DEV functions)
  */
 int mcuio_hc_set_irqs(struct mcuio_device *hc, unsigned dev, int irqs[]);
