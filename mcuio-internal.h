@@ -18,6 +18,8 @@ typedef void (*request_cb)(struct mcuio_request *);
  * @dev: destination device
  * @func: destination function
  * @offset: offset within function address space
+ * @offset_mask: this mask is applied to incoming packets' offsets when
+ *               looking for matching pending requests
  * @type: request type
  * @cb: pointer to callback function
  * @cb_data: callback data.
@@ -35,6 +37,7 @@ struct mcuio_request {
 	unsigned dev;
 	unsigned func;
 	unsigned offset;
+	unsigned offset_mask;
 	unsigned type;
 	request_cb cb;
 	void *cb_data;

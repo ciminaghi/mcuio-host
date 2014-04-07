@@ -153,7 +153,9 @@ static struct mcuio_request *__make_request(struct mcuio_device *mdev,
 					    unsigned dev, unsigned func,
 					    unsigned type,
 					    int fill,
-					    unsigned offset, ___request_cb cb)
+					    unsigned offset,
+					    unsigned offset_mask,
+					    ___request_cb cb)
 {
 	struct mcuio_request *out = mcuio_alloc_request(mdev);
 	if (!out)
@@ -163,6 +165,7 @@ static struct mcuio_request *__make_request(struct mcuio_device *mdev,
 	out->func = func;
 	out->type = type;
 	out->offset = offset;
+	out->offset_mask = offset_mask;
 	out->status = -ETIMEDOUT;
 	out->cb = cb;
 	out->fill = fill;
@@ -303,7 +306,8 @@ static struct mcuio_request *__find_request(struct mcuio_device *hc,
 		    mcuio_packet_bus(p) == hc->bus &&
 		    mcuio_packet_dev(p) == r->dev &&
 		    mcuio_packet_func(p) == r->func &&
-		    mcuio_packet_offset(p) == r->offset) {
+		    (mcuio_packet_offset(p) & r->offset_mask) ==
+		    (r->offset & r->offset_mask)) {
 			mutex_unlock(&data->lock);
 			return r;
 		}
@@ -446,7 +450,7 @@ static int __do_one_enum(struct mcuio_device *mdev, unsigned edev,
 	int ret;
 
 	r = __make_request(mdev, edev, efunc,
-			   mcuio_type_rddw, 1, 0, NULL);
+			   mcuio_type_rddw, 1, 0, 0xffff, NULL);
 	if (!r) {
 		*out = NULL;
 		return -ENOMEM;
