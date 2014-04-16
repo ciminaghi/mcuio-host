@@ -204,7 +204,6 @@ static int __do_request(struct mcuio_hc_data *data)
 	mutex_lock(&data->lock);
 	if (list_empty(&data->request_queue)) {
 		mutex_unlock(&data->lock);
-		pr_debug("%s %d\n", __func__, __LINE__);
 		return 0;
 	}
 	r = list_entry(data->request_queue.next, struct mcuio_request, list);
