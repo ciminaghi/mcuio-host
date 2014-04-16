@@ -37,7 +37,6 @@ static int mcuio_ldisc_shc_write(struct mcuio_soft_hc *shc,
 {
 	int stat;
 	struct tty_struct *tty = shc->priv;
-	pr_debug("%s invoked\n", __func__);
 	/* FIXME: CHECK FOR FREE SPACE IN BUFFER */
 	stat = tty->ops->write(tty, (char *)ptr, len);
 	return stat == len ? 0 : stat;
@@ -99,7 +98,6 @@ static void mcuio_ldisc_receive_buf(struct tty_struct *tty,
 		WARN_ON(1);
 		return;
 	}
-	pr_debug("Received %d chars\n", count);
 	space = CIRC_SPACE(priv->cbuf.head, priv->cbuf.tail,
 			   sizeof(priv->buf));
 	if (count > space)
@@ -114,7 +112,6 @@ static void mcuio_ldisc_receive_buf(struct tty_struct *tty,
 			       sizeof(priv->buf));
 		if (cnt < sizeof(struct mcuio_packet))
 			break;
-		pr_debug("pushing one packet\n");
 		mcuio_soft_hc_push_chars(plat->data,
 					 &priv->buf[priv->cbuf.tail],
 					 sizeof(struct mcuio_packet));
