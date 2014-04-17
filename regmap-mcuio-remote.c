@@ -100,6 +100,7 @@ static int regmap_mcuio_gather_write(void *context,
 		r.func = ctx->func;
 		r.offset = offset;
 		r.fill = 0;
+		r.dont_free = 1;
 		f(r.data, val);
 		ret = mcuio_submit_request(&r);
 		if (ret)
