@@ -30,4 +30,8 @@
 /* Vendors */
 #define MCUIO_VENDOR_DOGHUNTER	    0x0001
 
+
+/* Specific devices */
+#define MCUIO_DEVICE_JOYSTICK_SHIELD 0x0001
+
 #endif /* __MCUIO_IDS_H__ */
