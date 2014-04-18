@@ -205,18 +205,13 @@ static void mcuio_gpio_irq_mask(struct irq_data *d)
 static int mcuio_gpio_irq_set_type(struct irq_data *d, unsigned int flow_type)
 {
 	u8 v = 0;
-	switch (flow_type & IRQF_TRIGGER_MASK) {
-	case IRQF_TRIGGER_RISING:
-		v |= 1;
-		break;
-	case IRQF_TRIGGER_FALLING:
-		v |= 2;
-		break;
-	default:
-	case IRQF_TRIGGER_HIGH:
-	case IRQF_TRIGGER_LOW:
+	unsigned int t = flow_type & IRQF_TRIGGER_MASK;
+	if ((t & IRQF_TRIGGER_HIGH) || (t & IRQF_TRIGGER_LOW))
 		return -EINVAL;
-	}
+	if (t & IRQF_TRIGGER_RISING)
+		v |= 1;
+	if (t & IRQF_TRIGGER_FALLING)
+		v |= 2;
 	return __mcuio_gpio_set_irq_flags(d, v, 0x7f);
 }
 
