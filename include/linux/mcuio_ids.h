@@ -20,6 +20,8 @@
 #define MCUIO_CLASS_IRQ_CONTROLLER_PROTO  0x000a
 /* Send irqs from MCU via gpio */
 #define MCUIO_CLASS_IRQ_CONTROLLER_WIRE   0x000b
+/* Add-on shield */
+#define MCUIO_CLASS_SHIELD	    0x000c
 
 /* Invalid device id (used for id table termination */
 #define MCUIO_NO_DEVICE		    0x0000
