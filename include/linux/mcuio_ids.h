@@ -26,4 +26,8 @@
 /* Invalid device id (used for id table termination */
 #define MCUIO_NO_DEVICE		    0x0000
 
+
+/* Vendors */
+#define MCUIO_VENDOR_DOGHUNTER	    0x0001
+
 #endif /* __MCUIO_IDS_H__ */
