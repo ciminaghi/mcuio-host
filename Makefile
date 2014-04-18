@@ -6,7 +6,7 @@ mcuio-y := core.o bus.o sysfs.o
 regmap-mcuio-y := regmap-mcuio-remote.o
 
 obj-m = mcuio.o mcuio-hc-drv.o regmap-mcuio.o mcuio-hc-dev.o mcuio-soft-hc.o \
-mcuio-hc-ldisc.o gpio-mcuio.o mcuio-irq-ctrl.o
+mcuio-hc-ldisc.o gpio-mcuio.o mcuio-irq-ctrl.o mcuio-js-shield.o
 
 GIT_VERSION = $(shell cd $(src); git describe --dirty --long --tags)
 
