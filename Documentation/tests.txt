@@ -130,3 +130,62 @@ echo 0 > /sys/class/gpio/gpio114/value
 # Read back TXLED
 cat /sys/class/gpio/gpio115/value
 0
+
+============= TEST JOYSTICK SHIELD ==================
+
+
+# Boot with no serial console (we still use it to talk to the MCU):
+# Activate mcuio mode on bathos (send a CTRL-] via the usb serial interface)
+# Insert modules and set the line discipline on ttyATH0
+/sbin/insmod mcuio.ko
+/sbin/insmod mcuio-hc-dev.ko
+/sbin/insmod mcuio-soft-hc.ko
+/sbin/insmod mcuio-hc-drv.ko
+/sbin/insmod mcuio-hc-ldisc.ko
+/sbin/insmod regmap-mcuio.ko
+/sbin/insmod gpio-mcuio.ko
+/sbin/insmod mcuio-irq-ctrl.ko
+# This enables the handshake signal
+echo 1 >/sys/class/gpio/gpio22/value
+/mnt/nfs/macchina/host.orig/set_ldisc /dev/ttyATH0
+
+# On a second terminal
+# Load the joystick shield related modules
+/sbin/insmod mcuio-js-shield.ko
+/sbin/insmod hid-mcuio-js.ko
+# Test events (press and release shield buttons)
+evtest /dev/input/event1
+
+Input driver version is 1.0.1
+Input device ID: bus 0x6 vendor 0x1 product 0x1 version 0x0
+Input device name: "mcuio-js-shield 0001:0001"
+Supported events:
+  Event type 0 (EV_SYN)
+  Event type 1 (EV_KEY)
+    Event code 256 (BTN_0)
+    Event code 257 (BTN_1)
+    Event code 258 (BTN_2)
+    Event code 259 (BTN_3)
+  Event type 4 (EV_MSC)
+    Event code 4 (MSC_SCAN)
+Properties:
+Testing ... (interrupt to exit)
+Event: time 6188.107734, type 4 (EV_MSC), code 4 (MSC_SCAN), value 90001
+Event: time 6188.107734, type 1 (EV_KEY), code 256 (BTN_0), value 1
+Event: time 6188.107734, -------------- SYN_REPORT ------------
+Event: time 6188.263370, type 4 (EV_MSC), code 4 (MSC_SCAN), value 90001
+Event: time 6188.263370, type 1 (EV_KEY), code 256 (BTN_0), value 0
+Event: time 6188.263370, -------------- SYN_REPORT ------------
+Event: time 6188.562402, type 4 (EV_MSC), code 4 (MSC_SCAN), value 90001
+Event: time 6188.562402, type 1 (EV_KEY), code 256 (BTN_0), value 1
+Event: time 6188.562402, -------------- SYN_REPORT ------------
+Event: time 6188.701671, type 4 (EV_MSC), code 4 (MSC_SCAN), value 90001
+Event: time 6188.701671, type 1 (EV_KEY), code 256 (BTN_0), value 0
+Event: time 6188.701671, -------------- SYN_REPORT ------------
+Event: time 6188.809485, type 4 (EV_MSC), code 4 (MSC_SCAN), value 90001
+Event: time 6188.809485, type 1 (EV_KEY), code 256 (BTN_0), value 1
+Event: time 6188.809485, -------------- SYN_REPORT ------------
+Event: time 6188.918780, type 4 (EV_MSC), code 4 (MSC_SCAN), value 90001
+Event: time 6188.918780, type 1 (EV_KEY), code 256 (BTN_0), value 0
+Event: time 6188.918780, -------------- SYN_REPORT ------------
+....
