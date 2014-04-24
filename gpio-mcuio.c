@@ -100,6 +100,10 @@ static int mcuio_gpio_output(struct gpio_chip *chip, unsigned offset, int value)
 	unsigned curr_addr;
 	u32 curr;
 
+	/* Set value first */
+	mcuio_gpio_set(chip, offset, value);
+
+	/* Next configure the gpio as an output */
 	curr_addr = 0x510 + (offset / sizeof(u32)) * sizeof(u32);
 	pr_debug("%s: invoking regmap_read @0x%04x\n", __func__, curr_addr);
 	ret = regmap_read(map, curr_addr, &curr);
